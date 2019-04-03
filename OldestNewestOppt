@@ -1,0 +1,51 @@
+trigger OldestNewestOppt on Opportunity (after insert, after update) {
+   List<Partners__c> partn = new List<Partners__c>(); 
+   List<Partners__c> parto = new List<Partners__c>(); 
+
+   List<Opportunity> opptsOld = new List<Opportunity>(); 
+   List<Opportunity> opptsNew = new List<Opportunity>(); 
+   Datetime Oldest; 
+   Datetime Newest; 
+   Datetime OldestForPartn; 
+   ID OldestName; 
+   Datetime NewestForPartn; 
+   ID NewestName; 
+    
+    for(Opportunity o : Trigger.new){
+     if(o.Partners__c != null){
+         partn = [SELECT Id, Newest_Opportunity_Date__c, Newest_Opportunity__c FROM Partners__c WHERE Id =: o.Partners__c];
+         parto= [SELECT Id, Oldest_Opportunity_Date__c, Oldest_Opportunity__c FROM Partners__c WHERE Id =: o.Partners__c];
+
+         //Don't need these lists because query happens at Datetime variable below
+        //opptsOld = [SELECT CreatedDate FROM Opportunity WHERE Partners__c =: partn ORDER BY CreatedDate DESC Limit 1]; 
+        //opptsNew = [SELECT CreatedDate FROM Opportunity WHERE Partners__c =: partn ORDER BY CreatedDate ASC Limit 1]; 
+            
+        Oldest =  [SELECT CreatedDate, Name, ID FROM Opportunity WHERE Partners__c =: parto ORDER BY CreatedDate ASC Limit 1].CreatedDate;
+        Newest = [SELECT CreatedDate, Name, ID FROM Opportunity WHERE Partners__c =: partn ORDER BY CreatedDate DESC Limit 1].CreatedDate;
+      
+        OldestName = [SELECT CreatedDate, Name, ID FROM Opportunity WHERE Partners__c =: parto ORDER BY CreatedDate ASC Limit 1].ID;
+        NewestName = [SELECT CreatedDate, Name, ID FROM Opportunity WHERE Partners__c =: partn ORDER BY CreatedDate DESC Limit 1].ID;
+
+         
+        OldestForPartn = [SELECT Id, Newest_Opportunity_Date__c, Oldest_Opportunity_Date__c FROM Partners__c WHERE Id =: o.Partners__c].Oldest_Opportunity_Date__c; 
+        NewestForPartn = [SELECT Id, Newest_Opportunity_Date__c, Oldest_Opportunity_Date__c FROM Partners__c WHERE Id =: o.Partners__c].Newest_Opportunity_Date__c;
+        OldestForPartn = Oldest; 
+        NewestForPartn = Newest; 
+         
+         for (Partners__c ptn : partn){
+             ptn.Newest_Opportunity_Date__c = Newest; 
+             ptn.Newest_Opportunity__c = NewestName; 
+            
+         }
+          update partn; 
+         
+        for (Partners__c pto : parto){
+            pto.Oldest_Opportunity_Date__c = Oldest; 
+            pto.Oldest_Opportunity__c = OldestName; 
+            
+         }
+     
+         update parto;
+     }
+
+ }
